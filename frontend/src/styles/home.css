@@ -1,0 +1,75 @@
+.home-container {
+  min-height: 100vh;
+  padding-bottom: 70px;
+}
+
+.main-content {
+  padding-bottom: 20px;
+}
+
+.games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 15px;
+  padding: 15px;
+}
+
+.top-khiladis-section {
+  background: linear-gradient(135deg, #4b0082, #8b00ff);
+  padding: 20px;
+  margin: 20px 15px;
+  border-radius: 15px;
+}
+
+.top-khiladis-section h2 {
+  text-align: center;
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  color: #fff;
+}
+
+.top-players {
+  display: flex;
+  overflow-x: auto;
+  gap: 15px;
+  padding: 10px 0;
+}
+
+.player-card {
+  min-width: 200px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  padding: 20px;
+  text-align: center;
+}
+
+.player-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  margin: 0 auto 15px;
+}
+
+.player-info h3 {
+  font-size: 1rem;
+  margin-bottom: 5px;
+}
+
+.winnings {
+  font-size: 0.8rem;
+  color: #ccc;
+}
+
+.amount {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #4ade80;
+  margin: 5px 0;
+}
+
+.game-name {
+  font-size: 0.85rem;
+  color: #ddd;
+}

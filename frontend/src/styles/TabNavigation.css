@@ -1,0 +1,29 @@
+.tab-navigation {
+  display: flex;
+  background: #dc143c;
+  padding: 0 15px;
+  gap: 5px;
+  overflow-x: auto;
+}
+
+.tab {
+  padding: 12px 25px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s;
+}
+
+.tab.active {
+  color: white;
+  border-bottom-color: white;
+}
+
+.tab:hover {
+  color: white;
+}
