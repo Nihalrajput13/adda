@@ -1,22 +1,22 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext.jsx';
-import { WalletProvider } from './context/WalletContext.jsx';
-import PrivateRoute from './components/PrivateRoute.jsx';
-import Login from './pages/Login.jsx';
-import Home from './pages/Home.jsx';
-import Profile from './pages/Profile';
-import Wallet from './pages/Wallet';
-import Stats from './pages/Stats';
-import Quizzes from './pages/Quizzes';
-import Rewards from './pages/Rewards';
-import Winners from './pages/Winners.jsx';
-import Leaderboard from './pages/Leaderboard';
-import Settings from './pages/Settings';
-import KYC from './pages/KYC';
-import Referrals from './pages/Referrals';
-import Help from './pages/Help';
-import './styles/App.css';
+import React from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext.jsx'
+import { WalletProvider } from './context/WalletContext.jsx'
+import PrivateRoute from './components/PrivateRoute.jsx'
+import Login from './pages/Login.jsx'
+import Home from './pages/Home.jsx'
+import Profile from './pages/Profile.jsx'
+import Wallet from './pages/Wallet.jsx'
+import Stats from './pages/Stats.jsx'
+import Quizzes from './pages/Quizzes.jsx'
+import Rewards from './pages/Rewards.jsx'
+import Winners from './pages/Winners.jsx'
+import Leaderboard from './pages/Leaderboard.jsx'
+import Settings from './pages/Settings.jsx'
+import KYC from './pages/KYC.jsx'
+import Referrals from './pages/Referrals.jsx'
+import Help from './pages/Help.jsx'
+import './styles/App.css'
 
 function App() {
   return (
@@ -41,7 +41,7 @@ function App() {
         </Router>
       </WalletProvider>
     </AuthProvider>
-  );
+  )
 }
 
-export default App;
+export default App

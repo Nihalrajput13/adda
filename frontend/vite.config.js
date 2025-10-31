@@ -1,7 +1,6 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import { VitePWA } from 'vite-plugin-pwa';
-import history from 'connect-history-api-fallback';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
   plugins: [
@@ -30,7 +29,7 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png'
           }
-        ],
+        ]
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg}'],
@@ -42,26 +41,21 @@ export default defineConfig({
               cacheName: 'api-cache',
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 300,
-              },
-            },
-          },
-        ],
-      },
-    }),
+                maxAgeSeconds: 300
+              }
+            }
+          }
+        ]
+      }
+    })
   ],
   server: {
     port: 3000,
-    // Middleware to enable SPA fallback:
-    // This makes sure all routes fallback to index.html so React Router works properly.
-    middlewareMode: false,
-    setupMiddlewares(middlewares, devServer) {
-      middlewares.unshift(
-        history({
-          htmlAcceptHeaders: ['text/html', 'application/xhtml+xml'],
-        }),
-      );
-      return middlewares;
-    },
+    fs: {
+      strict: false
+    }
   },
-});
+  preview: {
+    port: 3000
+  }
+})
