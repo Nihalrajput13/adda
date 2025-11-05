@@ -1,7 +1,6 @@
 import User from '../models/User.js';
 import OTP from '../models/OTP.js';
 import jwt from 'jsonwebtoken';
-import { sendSMS } from '../utils/smsService.js';
 import { generateOTP } from '../utils/otpGenerator.js';
 
 export const sendOTP = async (req, res) => {

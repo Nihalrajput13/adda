@@ -17,12 +17,10 @@ const Login = () => {
   const handleSendOTP = async (e) => {
     e.preventDefault();
     setError('');
-    
     if (phone.length !== 10) {
       setError('Please enter a valid 10-digit phone number');
       return;
     }
-
     setLoading(true);
     try {
       await authService.sendOTP(phone);
@@ -37,12 +35,10 @@ const Login = () => {
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
     setError('');
-
     if (otp.length !== 6) {
       setError('Please enter the 6-digit OTP');
       return;
     }
-
     setLoading(true);
     try {
       await login(phone, otp);
@@ -51,6 +47,11 @@ const Login = () => {
       setError(err.response?.data?.message || 'Invalid OTP');
       setLoading(false);
     }
+  };
+
+  // --------- Register Icon/Button -----------
+  const handleRegisterClick = () => {
+    navigate('/Register');
   };
 
   return (
@@ -73,7 +74,7 @@ const Login = () => {
                   maxLength="10"
                   placeholder="Enter 10-digit phone number"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\\D/g, ''))}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
                   required
                 />
               </div>
@@ -110,9 +111,34 @@ const Login = () => {
             </button>
           </form>
         )}
+
+        {/* ------- Register Link/CTA -------- */}
+        <div style={{ textAlign: 'center', marginTop: 30 }}>
+          <button
+            onClick={handleRegisterClick}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              background: 'none',
+              border: 'none',
+              color: '#dc143c',
+              fontSize: 16,
+              cursor: 'pointer',
+              fontWeight: 600,
+              padding: 0
+            }}
+          >
+            <span style={{
+              display: 'inline-block',
+              marginRight: 8,
+              fontSize: 20
+            }}>➕</span>
+            New User? Register Here
+          </button>
+        </div>
       </div>
     </div>
   );
 };
 
-export default Login
+export default Login;
