@@ -1,197 +1,172 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { authService } from '../services/authService'; // This should point to your API service
-import logo from '../assets/khiladi-adda-logo.png'; // Use the logo file path if available
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { authService } from "../services/authService"; // keep your service
+import "../styles/Register.css";
 
 const Register = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    referralCode: ''
+    name: "",
+    phone: "",
+    email: "",
+    referralCode: ""
   });
   const [checkedTerms, setCheckedTerms] = useState(false);
   const [checkedAge, setCheckedAge] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Handle input change
+  const logoSrc = "/khiladi-adda-logo.png"; // expects file in frontend/public/
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Registration logic
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError('');
 
-    if (
-      !form.name ||
-      !form.phone ||
-      !form.email ||
-      form.phone.length !== 10 ||
-      !checkedTerms ||
-      !checkedAge
-    ) {
-      setError('Please fill all required fields and check both boxes.');
-      return;
-    }
+  if (!form.name || !form.phone || !form.email || form.phone.length !== 10 || !checkedTerms || !checkedAge) {
+    setError('Please fill all required fields and check both boxes.');
+    return;
+  }
 
-    setLoading(true);
-    try {
-      // Call your backend registration service
-      const res = await authService.register(form);
-      if (res.success) {
-        // After registration, navigate to login or home
-        navigate('/login');
-      } else {
-        setError(res.message || 'Registration failed');
-      }
-    } catch (err) {
-      setError('Registration failed');
+  setLoading(true);
+  try {
+    console.log('Sending OTP to', form.phone);
+    const sendRes = await authService.sendOTP(form.phone);
+
+    console.log('sendOTP response', sendRes);
+
+    if (sendRes && sendRes.message) {
+      // Save pending registration to sessionStorage or context
+      sessionStorage.setItem('pendingRegistration', JSON.stringify(form));
+      // navigate to OTP verification route
+      navigate('/verify-otp');
+    } else {
+      setError(sendRes.message || 'Failed to send OTP');
     }
+  } catch (err) {
+    console.error('sendOTP error', err);
+    setError(err?.response?.data?.message || err?.message || 'Failed to send OTP');
+  } finally {
     setLoading(false);
-  };
-
-  // Add logic to detect existing logged-in user and redirect if necessary
-  // e.g. useAuthContext, or check localStorage for JWT
+  }
+};
 
   return (
-    <div className="register-page" style={{ background: '#181010', minHeight: '100vh', color: '#fff' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 40 }}>
-        {/* Logo */}
-        <img
-          src={logo}
-          alt="Khiladi Adda"
-          style={{ width: 200, marginBottom: 16, filter: 'drop-shadow(0 0 16px #dc143c)' }}
-        />
+    <div className="register-page">
+      <div className="register-top">
+        <img src={logoSrc} alt="Khiladi Adda" className="register-logo" />
       </div>
-      <form className="register-form" onSubmit={handleSubmit} style={{ maxWidth: 340, margin: '0 auto', padding: 16 }}>
-        <h2 style={{ textAlign: 'left', marginBottom: 18 }}>Create an Account</h2>
 
-        <div className="form-group" style={{ marginBottom: 12 }}>
-          <label style={{ display: 'block' }}>
-            <span style={{ marginRight: 8 }}>👤</span>
-            Name
+      <form className="register-card" onSubmit={handleSubmit} noValidate>
+        <h2 className="register-title">Create an Account</h2>
+
+        <div className="input-group">
+          <label className="input-label">
+            <span className="icon">👤</span>
+            <input
+              className="input-field"
+              type="text"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              placeholder="Name"
+              autoComplete="off"
+            />
           </label>
-          <input
-            type="text"
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            placeholder="Name"
-            style={inputStyle}
-            autoComplete="off"
-          />
         </div>
 
-        <div className="form-group" style={{ marginBottom: 12 }}>
-          <label style={{ display: 'block' }}>
-            <span style={{ marginRight: 8 }}>📞</span>
-            Mobile Number
+        <div className="input-group">
+          <label className="input-label">
+            <span className="icon">📞</span>
+            <input
+              className="input-field"
+              type="tel"
+              name="phone"
+              value={form.phone}
+              onChange={handleChange}
+              placeholder="Mobile Number"
+              maxLength={10}
+              autoComplete="off"
+            />
           </label>
-          <input
-            type="tel"
-            name="phone"
-            value={form.phone}
-            onChange={handleChange}
-            placeholder="Mobile Number"
-            style={inputStyle}
-            autoComplete="off"
-            maxLength={10}
-          />
         </div>
 
-        <div className="form-group" style={{ marginBottom: 12 }}>
-          <label style={{ display: 'block' }}>
-            <span style={{ marginRight: 8 }}>✉️</span>
-            Email
+        <div className="input-group">
+          <label className="input-label">
+            <span className="icon">✉️</span>
+            <input
+              className="input-field"
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              placeholder="Email"
+              autoComplete="off"
+            />
           </label>
-          <input
-            type="email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            placeholder="Email"
-            style={inputStyle}
-            autoComplete="off"
-          />
         </div>
 
-        <div className="form-group" style={{ marginBottom: 12 }}>
-          <label style={{ display: 'block' }}>
-            <span style={{ marginRight: 8 }}>🔗</span>
-            Referral Code (Optional)
+        <div className="input-group">
+          <label className="input-label">
+            <span className="icon">🔗</span>
+            <input
+              className="input-field"
+              type="text"
+              name="referralCode"
+              value={form.referralCode}
+              onChange={handleChange}
+              placeholder="Referral Code (Optional)"
+              autoComplete="off"
+            />
           </label>
-          <input
-            type="text"
-            name="referralCode"
-            value={form.referralCode}
-            onChange={handleChange}
-            placeholder="Referral Code (Optional)"
-            style={inputStyle}
-            autoComplete="off"
-          />
         </div>
 
-        <div style={{ marginBottom: 10 }}>
-          <label style={{ display: 'flex', alignItems: 'center' }}>
+        <div className="checkbox-row">
+          <label className="checkbox-label">
             <input
               type="checkbox"
               checked={checkedTerms}
               onChange={() => setCheckedTerms(!checkedTerms)}
-              style={{ marginRight: 8 }}
-              required
             />
-            Please check <a href="/terms" style={{ color: '#dc143c' }}>Terms & Condition and Legality & Responsible Gaming & Privacy Policy</a> to further proceed
+            <span className="checkbox-custom" />
+            <span className="checkbox-text">
+              Please check{" "}
+              <Link to="/terms" className="link-inline">Terms &amp; Condition and Legality &amp; Responsible Gaming &amp; Privacy Policy</Link>{" "}
+              to further proceed
+            </span>
           </label>
         </div>
 
-        <div style={{ marginBottom: 10 }}>
-          <label style={{ display: 'flex', alignItems: 'center' }}>
+        <div className="checkbox-row">
+          <label className="checkbox-label">
             <input
               type="checkbox"
               checked={checkedAge}
               onChange={() => setCheckedAge(!checkedAge)}
-              style={{ marginRight: 8 }}
-              required
             />
-            I'm 18 years old, understand under-age use may be illegal, and agree to complete KYC before first withdrawal.
+            <span className="checkbox-custom" />
+            <span className="checkbox-text">
+              I'm 18 years old and I understand that under-age use of this app may be illegal. I agree to complete my KYC before the first cash withdrawal on the app.
+            </span>
           </label>
         </div>
 
-        {error && <div style={{ color: "#dc143c", margin: "12px 0" }}>{error}</div>}
+        {error && <div className="error-msg">{error}</div>}
 
-        <div style={{ margin: '16px 0' }}>
-          <button
-            type="submit"
-            style={{ background: '#dc143c', color: '#fff', padding: '12px 0', fontSize: 20, fontWeight: 600, borderRadius: 8, border: 'none', width: '100%' }}
-            disabled={loading}
-          >
-            {loading ? "Registering..." : "NEXT"}
-          </button>
-        </div>
+        <button className="btn-next" type="submit" disabled={loading}>
+          {loading ? "Registering..." : "NEXT"}
+        </button>
 
-        <div style={{ textAlign: 'center', marginTop: 8 }}>
+        <div className="existing-user">
           <span>Existing User? </span>
-          <a href="/login" style={{ color: "#fff", textDecoration: "underline", fontWeight: 600 }}>Login Now</a>
+          <Link to="/login" className="login-link">Login Now</Link>
         </div>
       </form>
     </div>
   );
-};
-
-const inputStyle = {
-  width: "100%",
-  padding: "10px",
-  borderRadius: "6px",
-  border: "1px solid #fff",
-  background: "#1c1717",
-  color: "#fff",
-  outline: "none",
-  marginTop: "4px",
-  fontSize: "16px"
 };
 
 export default Register;

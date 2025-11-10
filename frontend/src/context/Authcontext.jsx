@@ -25,8 +25,20 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token]);
 
+  // This function now correctly calls authService.login
   const login = async (phone, otp) => {
-    const data = await authService.verifyOTP(phone, otp);
+    // Pass as a single object
+    const data = await authService.login({ phone, otp }); 
+    localStorage.setItem('token', data.token);
+    setToken(data.token);
+    setUser(data.user);
+    return data;
+  };
+  
+  // NEW function to handle registration
+  const register = async (registrationData) => {
+    // registrationData = { name, email, phone, otp, referralCode }
+    const data = await authService.register(registrationData);
     localStorage.setItem('token', data.token);
     setToken(data.token);
     setUser(data.user);
@@ -40,7 +52,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading, isAuthenticated: !!token }}>
+    // Expose the new 'register' function to your components
+    <AuthContext.Provider value={{ user, login, register, logout, loading, isAuthenticated: !!token }}>
       {children}
     </AuthContext.Provider>
   );

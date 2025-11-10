@@ -17,6 +17,7 @@ import Settings from './pages/Settings.jsx';
 import KYC from './pages/KYC.jsx';
 import Referrals from './pages/Referrals.jsx';
 import Help from './pages/Help.jsx';
+import VerifyOTP from './pages/VerifyOTP.jsx';
 import './styles/App.css';
 
 function App() {
@@ -39,6 +40,7 @@ function App() {
             <Route path="/kyc" element={<PrivateRoute><KYC /></PrivateRoute>} />
             <Route path="/referrals" element={<PrivateRoute><Referrals /></PrivateRoute>} />
             <Route path="/help" element={<PrivateRoute><Help /></PrivateRoute>} />
+            <Route path="/verify-otp" element={<VerifyOTP />} />
           </Routes>
         </Router>
       </WalletProvider>

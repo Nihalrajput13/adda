@@ -1,104 +1,109 @@
+// backend/src/controllers/authController.js
 import User from '../models/User.js';
 import OTP from '../models/OTP.js';
 import jwt from 'jsonwebtoken';
 import { generateOTP } from '../utils/otpGenerator.js';
 
+const normalizePhone = (raw) => {
+  if (!raw) return raw;
+  return String(raw).replace(/\D/g, '');
+};
+
 export const sendOTP = async (req, res) => {
   try {
-    const { phone } = req.body;
+    const phoneRaw = req.body.phone;
+    const phone = normalizePhone(phoneRaw);
 
     if (!phone || phone.length !== 10) {
       return res.status(400).json({ message: 'Invalid phone number' });
     }
 
-    // Generate 6-digit OTP
     const otp = generateOTP();
 
-    // Save OTP to database
     await OTP.create({
       phone,
       otp,
-      expiresAt: new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
+      createdAt: new Date()
     });
 
-    // Send SMS (uncomment when SMS service is configured)
-    // await sendSMS(phone, `Your Khiladi Adda OTP is: ${otp}. Valid for 5 minutes.`);
-    
-    // For development, log OTP
     console.log(`OTP for ${phone}: ${otp}`);
 
-    res.status(200).json({ 
+    res.status(200).json({
+      success: true,
       message: 'OTP sent successfully',
-      // Remove this in production
       otp: process.env.NODE_ENV === 'development' ? otp : undefined
     });
   } catch (error) {
     console.error('Send OTP error:', error);
-    res.status(500).json({ message: 'Failed to send OTP' });
+    res.status(500).json({ success: false, message: 'Failed to send OTP' });
   }
 };
 
 export const verifyOTP = async (req, res) => {
   try {
-    const { phone, otp } = req.body;
+    const { phone: rawPhone, otp: rawOtp, name, email, referralCode } = req.body;
+    const phone = normalizePhone(rawPhone);
+    const otp = String(rawOtp).trim();
 
-    // Find valid OTP
+    if (!phone || !otp) {
+      return res.status(400).json({ success: false, message: 'Phone and OTP are required' });
+    }
+
     const otpRecord = await OTP.findOne({
       phone,
       otp,
       expiresAt: { $gt: new Date() },
       verified: false
-    });
+    }).sort({ createdAt: -1 });
 
     if (!otpRecord) {
-      return res.status(400).json({ message: 'Invalid or expired OTP' });
+      const latest = await OTP.findOne({ phone }).sort({ createdAt: -1 }).lean();
+      console.log('[verifyOTP] no matching otpRecord, latest:', latest);
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
     }
 
-    // Mark OTP as verified
     otpRecord.verified = true;
     await otpRecord.save();
 
-    // Find or create user
     let user = await User.findOne({ phone });
     if (!user) {
-      user = await User.create({ phone });
+      const userData = { phone };
+      if (name) userData.name = name;
+      if (email) userData.email = email;
+      if (referralCode) userData.referralCode = referralCode;
+      user = await User.create(userData);
+    } else {
+      let changed = false;
+      if (name && !user.name) { user.name = name; changed = true; }
+      if (email && !user.email) { user.email = email; changed = true; }
+      if (referralCode && !user.referralCode) { user.referralCode = referralCode; changed = true; }
+      if (changed) await user.save();
     }
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '30d' }
-    );
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '30d' });
 
     res.status(200).json({
-      message: 'OTP verified successfully',
+      success: true,
+      message: 'OTP verified and user created/updated',
       token,
-      user: {
-        id: user._id,
-        phone: user.phone,
-        name: user.name,
-        email: user.email,
-        avatar: user.avatar
-      }
+      user: { id: user._id, phone: user.phone, name: user.name, email: user.email, avatar: user.avatar }
     });
   } catch (error) {
     console.error('Verify OTP error:', error);
-    res.status(500).json({ message: 'OTP verification failed' });
+    res.status(500).json({ success: false, message: 'OTP verification failed' });
   }
 };
 
 export const getCurrentUser = async (req, res) => {
   try {
     const user = await User.findById(req.userId).select('-__v');
-    
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
-
-    res.status(200).json({ user });
+    res.status(200).json({ success: true, user });
   } catch (error) {
     console.error('Get user error:', error);
-    res.status(500).json({ message: 'Failed to fetch user' });
+    res.status(500).json({ success: false, message: 'Failed to fetch user' });
   }
 };
