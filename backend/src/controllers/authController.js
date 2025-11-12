@@ -1,109 +1,172 @@
-// backend/src/controllers/authController.js
 import User from '../models/User.js';
-import OTP from '../models/OTP.js';
+import OTP from '../models/OTP.js'; // Assuming your OTP model is OTP.js
 import jwt from 'jsonwebtoken';
-import { generateOTP } from '../utils/otpGenerator.js';
 
-const normalizePhone = (raw) => {
-  if (!raw) return raw;
-  return String(raw).replace(/\D/g, '');
+// Helper function to create a token
+const generateToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: '30d',
+  });
 };
 
+/**
+ * @desc    Send an OTP to a phone number
+ * @route   POST /api/auth/send-otp
+ */
 export const sendOTP = async (req, res) => {
+  const { phone } = req.body;
+  
+  if (!phone || phone.length !== 10) {
+    return res.status(400).json({ message: 'Valid 10-digit phone number is required' });
+  }
+
   try {
-    const phoneRaw = req.body.phone;
-    const phone = normalizePhone(phoneRaw);
+    // 1. Generate a 6-digit OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log(`OTP for ${phone}: ${otpCode}`); // Log OTP to terminal for testing
 
-    if (!phone || phone.length !== 10) {
-      return res.status(400).json({ message: 'Invalid phone number' });
-    }
+    // 2. Set expiration time (e.g., 5 minutes)
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-    const otp = generateOTP();
+    // 3. Delete any old OTPs for this number
+    await OTP.deleteMany({ phone });
 
-    await OTP.create({
+    // 4. Save the new OTP
+    const newOTP = new OTP({
       phone,
-      otp,
-      expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
-      createdAt: new Date()
+      otp: otpCode,
+      expiresAt,
     });
+    await newOTP.save();
 
-    console.log(`OTP for ${phone}: ${otp}`);
-
-    res.status(200).json({
-      success: true,
-      message: 'OTP sent successfully',
-      otp: process.env.NODE_ENV === 'development' ? otp : undefined
-    });
+    // In a real app, you would send this via an SMS gateway
+    res.status(200).json({ message: 'OTP sent successfully (check backend terminal)' });
+  
   } catch (error) {
-    console.error('Send OTP error:', error);
-    res.status(500).json({ success: false, message: 'Failed to send OTP' });
+    console.error('Error sending OTP:', error);
+    res.status(500).json({ message: 'Server error while sending OTP' });
   }
 };
 
-export const verifyOTP = async (req, res) => {
-  try {
-    const { phone: rawPhone, otp: rawOtp, name, email, referralCode } = req.body;
-    const phone = normalizePhone(rawPhone);
-    const otp = String(rawOtp).trim();
 
-    if (!phone || !otp) {
-      return res.status(400).json({ success: false, message: 'Phone and OTP are required' });
+/**
+ * @desc    Register a new user with an OTP
+ * @route   POST /api/auth/register
+ */
+export const registerUser = async (req, res) => {
+  const { name, email, phone, otp, referralCode } = req.body;
+
+  try {
+    // 1. Find the OTP
+    const otpRecord = await OTP.findOne({
+      phone,
+      otp,
+      expiresAt: { $gt: new Date() }, // Check it's not expired
+    });
+
+    if (!otpRecord) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
 
+    // 2. Check if user already exists (by phone OR email)
+    const phoneExists = await User.findOne({ phone });
+    if (phoneExists) {
+      return res.status(400).json({ message: 'Phone number already registered' });
+    }
+    const emailExists = await User.findOne({ email });
+    if (emailExists) {
+      return res.status(400).json({ message: 'Email already registered' });
+    }
+
+    // 3. Create new user
+    const user = await User.create({
+      name,
+      email,
+      phone,
+      // Add referralCode logic here if you have it
+    });
+
+    // 4. Mark OTP as verified
+    otpRecord.verified = true;
+    await otpRecord.save();
+
+    // 5. Generate token and send response
+    const token = generateToken(user._id);
+    res.status(201).json({
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+      },
+    });
+
+  } catch (error) {
+    console.error('Error in registerUser:', error);
+    res.status(500).json({ message: 'Server error during registration' });
+  }
+};
+
+
+/**
+ * @desc    Login an existing user with an OTP
+ * @route   POST /api/auth/login-otp
+ */
+export const loginWithOTP = async (req, res) => {
+  const { phone, otp } = req.body;
+
+  try {
+    // 1. Find the OTP
     const otpRecord = await OTP.findOne({
       phone,
       otp,
       expiresAt: { $gt: new Date() },
-      verified: false
-    }).sort({ createdAt: -1 });
+    });
 
     if (!otpRecord) {
-      const latest = await OTP.findOne({ phone }).sort({ createdAt: -1 }).lean();
-      console.log('[verifyOTP] no matching otpRecord, latest:', latest);
-      return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
 
+    // 2. Find the user
+    const user = await User.findOne({ phone });
+    if (!user) {
+      // This is the fix! We don't create a user, we send an error.
+      return res.status(404).json({ message: 'User not found. Please register.' });
+    }
+
+    // 3. Mark OTP as verified
     otpRecord.verified = true;
     await otpRecord.save();
 
-    let user = await User.findOne({ phone });
-    if (!user) {
-      const userData = { phone };
-      if (name) userData.name = name;
-      if (email) userData.email = email;
-      if (referralCode) userData.referralCode = referralCode;
-      user = await User.create(userData);
-    } else {
-      let changed = false;
-      if (name && !user.name) { user.name = name; changed = true; }
-      if (email && !user.email) { user.email = email; changed = true; }
-      if (referralCode && !user.referralCode) { user.referralCode = referralCode; changed = true; }
-      if (changed) await user.save();
-    }
-
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '30d' });
-
+    // 4. Generate token and send response
+    const token = generateToken(user._id);
     res.status(200).json({
-      success: true,
-      message: 'OTP verified and user created/updated',
       token,
-      user: { id: user._id, phone: user.phone, name: user.name, email: user.email, avatar: user.avatar }
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+      },
     });
+
   } catch (error) {
-    console.error('Verify OTP error:', error);
-    res.status(500).json({ success: false, message: 'OTP verification failed' });
+    console.error('Error in loginWithOTP:', error);
+    res.status(500).json({ message: 'Server error during login' });
   }
 };
 
+
+/**
+ * @desc    Get current user's profile
+ * @route   GET /api/auth/me
+ */
 export const getCurrentUser = async (req, res) => {
-  try {
-    const user = await User.findById(req.userId).select('-__v');
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-    res.status(200).json({ success: true, user });
-  } catch (error) {
-    console.error('Get user error:', error);
-    res.status(500).json({ success: false, message: 'Failed to fetch user' });
+  // req.user is attached by the authMiddleware
+  if (req.user) {
+    res.status(200).json({ user: req.user });
+  } else {
+    res.status(404).json({ message: 'User not found' });
   }
 };

@@ -1,45 +1,42 @@
-import api from './api';
+import api from './api'; // Your axios instance
 
-// We now have two clear functions: login and register.
-// Both hit the same backend endpoint, but pass different data.
-
-const sendOTP = async (phone) => {
-  const response = await api.post('/auth/send-otp', { phone });
-  return response.data;
-};
-
-/**
- * Logs in an existing user.
- * Only sends phone and OTP.
- */
-const login = async ({ phone, otp }) => {
-  const payload = { phone, otp };
-  const response = await api.post('/auth/verify-otp', payload);
-  return response.data; // Returns { token, user }
-};
-
-/**
- * Registers a new user.
- * Sends all registration data.
- */
-const register = async ({ name, email, phone, otp, referralCode }) => {
-  const payload = { name, email, phone, otp, referralCode };
-  const response = await api.post('/auth/verify-otp', payload);
-  return response.data; // Returns { token, user }
-};
-
-const getCurrentUser = async (token) => {
-  const response = await api.get('/auth/me', {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  return response.data;
-};
-
-// We ONLY use the named export.
-// This matches `import { authService } from ...`
 export const authService = {
-  sendOTP,
-  login,      // <-- Renamed from verifyOTP
-  register,   // <-- New!
-  getCurrentUser,
+  
+  /**
+   * Calls the backend to send an OTP to a phone number
+   */
+  sendOTP: async (phone) => {
+    // Calls POST /api/auth/send-otp
+    const response = await api.post('/auth/send-otp', { phone });
+    return response.data;
+  },
+
+  /**
+   * Calls the new backend registration endpoint
+   */
+  register: async (userData) => {
+    // userData = { name, email, phone, otp, referralCode }
+    // Calls POST /api/auth/register
+    const response = await api.post('/auth/register', userData);
+    return response.data; // Returns { token, user }
+  },
+
+  /**
+   * Calls the new backend login endpoint
+   */
+  login: async ({ phone, otp }) => {
+    // Calls POST /api/auth/login-otp
+    const response = await api.post('/auth/login-otp', { phone, otp });
+    return response.data; // Returns { token, user }
+  },
+
+  /**
+   * Calls the protected "me" route to get user data from a token
+   */
+  getCurrentUser: async () => {
+    // Calls GET /api/auth/me
+    // The 'api.js' interceptor automatically adds the token
+    const response = await api.get('/auth/me');
+    return response.data;
+  }
 };

@@ -1,4 +1,4 @@
-import api from './api'; // This imports your configured axios instance
+import api from './api'; 
 
 export const gameService = {
   /**
@@ -10,7 +10,6 @@ export const gameService = {
   },
 
   /**
-   * --- THIS IS THE NEW FUNCTION THAT FIXES YOUR BUG ---
    * Fetches a single game's details (for GameDetailPage.jsx header)
    */
   getGameBySlug: async (gameSlug) => {
@@ -23,6 +22,16 @@ export const gameService = {
    */
   getTournamentsByGame: async (gameSlug) => {
     const response = await api.get(`/tournaments/game/${gameSlug}`);
+    return response.data;
+  },
+  
+  /**
+   * --- THIS IS THE NEW FUNCTION ---
+   * Submits the user's details to join a tournament
+   */
+  joinTournament: async (data) => {
+    // data = { tournamentId, inGameUsername, inGameUserId, gameLevel }
+    const response = await api.post('/tournaments/join', data);
     return response.data;
   }
 };
