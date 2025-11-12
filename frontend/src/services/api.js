@@ -1,36 +1,32 @@
 import axios from 'axios';
 
+// Create the main axios instance
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  // Set the base URL for all your backend API routes
+  baseURL: 'http://localhost:5000/api' 
 });
 
-// Add token to requests
+// --- THIS IS THE CRITICAL FIX ---
+// This "interceptor" runs BEFORE every single API request
 api.interceptors.request.use(
   (config) => {
+    // 1. Get the token from local storage
     const token = localStorage.getItem('token');
+    
+    // 2. If the token exists, add it to the Authorization header
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // 3. Return the modified config so the request can continue
     return config;
   },
   (error) => {
+    // Handle any errors that happen during the request setup
     return Promise.reject(error);
   }
 );
+// 
 
-// Handle response errors
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
-
+// Export the configured api instance as the default
 export default api;

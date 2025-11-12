@@ -3,9 +3,13 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext.jsx';
 import { WalletProvider } from './context/WalletContext.jsx';
 import PrivateRoute from './components/PrivateRoute.jsx';
+
+// --- Import all your pages ---
 import Login from './pages/Login.jsx';
-import Register from './pages/Register.jsx'; // <-- Make sure this import exists
+import Register from './pages/Register.jsx';
+import VerifyOTP from './pages/VerifyOTP.jsx'; // The page for after registration
 import Home from './pages/Home.jsx';
+import GameDetailPage from './pages/GameDetailPage.jsx'; // The new game details page
 import Profile from './pages/Profile.jsx';
 import Wallet from './pages/Wallet.jsx';
 import Stats from './pages/Stats.jsx';
@@ -17,7 +21,6 @@ import Settings from './pages/Settings.jsx';
 import KYC from './pages/KYC.jsx';
 import Referrals from './pages/Referrals.jsx';
 import Help from './pages/Help.jsx';
-import VerifyOTP from './pages/VerifyOTP.jsx';
 import './styles/App.css';
 
 function App() {
@@ -26,9 +29,18 @@ function App() {
       <WalletProvider>
         <Router>
           <Routes>
+            {/* Public Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/verify-otp" element={<VerifyOTP />} />
+
+            {/* Private Routes (Wrapped) */}
             <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
+            
+            {/* --- THIS IS THE MISSING ROUTE THAT FIXES YOUR ERROR --- */}
+            {/* It uses :slug as a variable to match "free-fire", "ludo", etc. */}
+            <Route path="/games/:slug" element={<PrivateRoute><GameDetailPage /></PrivateRoute>} />
+            
             <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
             <Route path="/wallet" element={<PrivateRoute><Wallet /></PrivateRoute>} />
             <Route path="/stats" element={<PrivateRoute><Stats /></PrivateRoute>} />
@@ -40,7 +52,9 @@ function App() {
             <Route path="/kyc" element={<PrivateRoute><KYC /></PrivateRoute>} />
             <Route path="/referrals" element={<PrivateRoute><Referrals /></PrivateRoute>} />
             <Route path="/help" element={<PrivateRoute><Help /></PrivateRoute>} />
-            <Route path="/verify-otp" element={<VerifyOTP />} />
+
+            {/* Optional: A catch-all route to redirect non-matching URLs */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Router>
       </WalletProvider>

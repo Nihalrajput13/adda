@@ -1,34 +1,58 @@
-import React, { useState, useContext } from 'react';
-import { Link } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
-import BottomNav from '../components/BottomNav';
-import Header from '../components/Header';
-import NotificationBanner from '../components/NotificationBanner';
-import TabNavigation from '../components/TabNavigation';
-import GameCard from '../components/GameCard';
-import { WalletContext } from '../context/WalletContext';
-import '../styles/Home.css';
+/*
+* This is the NEW Home.jsx file.
+* It fetches games from your backend.
+* It does NOT have "Top Khiladis" in it.
+*/
+import React, { useState, useContext, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { gameService } from "../services/gameService.js"; // Make sure .js is here
+import { WalletContext } from "../context/WalletContext";
+import Sidebar from "../components/Sidebar";
+import Header from "../components/Header";
+import NotificationBanner from "../components/NotificationBanner";
+import TabNavigation from "../components/TabNavigation";
+import GameCard from "../components/GameCard";
+import BottomNav from "../components/BottomNav";
+
+// This is the NEW CSS file you must create
+import "../styles/HomeGames.css"; 
 
 const Home = () => {
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('All');
   const { balance } = useContext(WalletContext);
 
-  const games = [
-    { id: 1, name: 'FREE FIRE CLASH SQUAD', image: '/games/freefire.jpg', category: 'Esports' },
-    { id: 2, name: 'TEAM DEATHMATCH', image: '/games/team.jpg', category: 'Esports' },
-    { id: 3, name: 'PUBG MOBILE LITE', image: '/games/pubg.jpg', category: 'Esports' },
-    { id: 4, name: 'VALORANT', image: '/games/valorant.jpg', category: 'Esports' },
-    { id: 5, name: 'LUDO', image: '/games/ludo.jpg', category: 'Games' },
-    { id: 6, name: 'RUMMY', image: '/games/rummy.jpg', category: 'Games' },
-  ];
+  // States for fetching data from your backend
+  const [games, setGames] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const topPlayers = [
-    { name: 'Rajkamal Meena', winnings: '₹6812331.00', game: 'Ludo' },
-    { name: 'Alok Kumar Swain', winnings: '₹2344334.00', game: 'Fan Battle' },
-    { name: 'Rohit Singh', winnings: '₹1876543.00', game: 'Cricket Quiz' },
-  ];
+  // This fetches games from your backend when the page loads
+  useEffect(() => {
+    const fetchGames = async () => {
+      try {
+        setLoading(true);
+        // This is the API call to your backend
+        const data = await gameService.getGames();
+        setGames(data.games); // Assumes backend returns { games: [...] }
+        setError(null);
+      } catch (err) {
+        console.error("Failed to fetch games:", err);
+        setError(err.message || 'Failed to fetch games');
+        if (err.response && err.response.status === 401) {
+          // If token is bad, log out user
+          navigate('/login');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchGames();
+  }, [navigate]);
+
+  // Filter games based on the selected tab
   const filteredGames = activeTab === 'All' 
     ? games 
     : games.filter(game => game.category === activeTab);
@@ -44,37 +68,40 @@ const Home = () => {
         />
         
         <NotificationBanner 
-          message="You can now withdraw your funds. We are excited to share that we have smoothly transferred your balance from deposit wallet to winnings wallet."
+          message="You can now withdraw your funds. We have transferred your balance from deposit to winnings wallet."
         />
         
         <TabNavigation 
-          tabs={['All', 'Games', 'Cricket', 'Esports']}
+          tabs={['All', 'Games', 'Esports', 'Fanbattle']}
           activeTab={activeTab}
           onChange={setActiveTab}
         />
 
-        <div className="games-grid">
-          {filteredGames.map(game => (
-            <GameCard key={game.id} game={game} />
-          ))}
-        </div>
-
-        <div className="top-khiladis-section">
-          <h2>🏆 TOP KHILADIS</h2>
-          <div className="top-players">
-            {topPlayers.map((player, index) => (
-              <div key={index} className="player-card">
-                <div className="player-avatar"></div>
-                <div className="player-info">
-                  <h3>{player.name}</h3>
-                  <p className="winnings">Won</p>
-                  <p className="amount">{player.winnings}</p>
-                  <p className="game-name">By Playing {player.game}</p>
-                </div>
-              </div>
-            ))}
+        {/* --- This is the new dynamic section --- */}
+        
+        {/* 1. Show Loading State */}
+        {loading && <div className="loading-spinner">Loading Games...</div>}
+        
+        {/* 2. Show Error State */}
+        {error && <div className="error-message">Error: {error}</div>}
+        
+        {/* 3. Show Game Grid on Success */}
+        {!loading && !error && (
+          <div className="games-grid">
+            {filteredGames.length > 0 ? (
+              filteredGames.map(game => (
+                // This links to your new GameDetailPage.jsx
+                <Link to={`/games/${game.slug}`} key={game._id} className="game-card-link">
+                  <GameCard game={game} />
+                </Link>
+              ))
+            ) : (
+              <div className="error-message">No games found for this category.</div>
+            )}
           </div>
-        </div>
+        )}
+        
+        {/* The "Top Khiladis" section is removed, as it was in the old file */}
       </div>
 
       <BottomNav />

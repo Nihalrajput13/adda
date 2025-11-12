@@ -1,15 +1,15 @@
 import React from 'react';
-import '../styles/GameCard.css';
+import '../styles/HomeGames.css'; // Make sure this path is correct if you moved the CSS
 
+/**
+ * This component displays a single game.
+ * It now expects `game.iconUrl` and `game.name` from the database.
+ */
 const GameCard = ({ game }) => {
   return (
     <div className="game-card">
-      <div className="game-image">
-        <img src={game.image} alt={game.name} onError={(e) => {
-          e.target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="150"><rect fill="%23333" width="200" height="150"/><text fill="%23fff" x="50%" y="50%" text-anchor="middle" dy=".3em">' + game.name + '</text></svg>';
-        }} />
-      </div>
-      <h3 className="game-name">{game.name}</h3>
+      <img src={game.iconUrl} alt={game.name} />
+      <span>{game.name}</span>
     </div>
   );
 };
