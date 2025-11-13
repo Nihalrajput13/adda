@@ -158,3 +158,54 @@
   text-align: center;
   font-size: 18px;
 }
+/* ADD THESE NEW STYLES AT THE END OF 
+  frontend/src/styles/GameDetailPage.css
+*/
+
+/* --- Banner Slider Styles --- */
+.slider-container {
+  width: 100%;
+  overflow: hidden; /* This hides the other slides */
+  position: relative;
+  background-color: #1a1a1a;
+}
+
+.slider-wrapper {
+  display: flex;
+  /* This transition creates the smooth sliding animation */
+  transition: transform 0.5s ease-in-out;
+}
+
+.slider-slide {
+  flex-shrink: 0; /* Prevents slides from shrinking */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.slider-image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.slider-dots {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+
+.slider-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.slider-dot.active {
+  background-color: rgba(255, 255, 255, 1);
+}

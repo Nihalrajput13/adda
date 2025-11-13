@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom'; // <-- This is the corrected line
+import { useParams, useNavigate } from 'react-router-dom';
 import { gameService } from '../services/gameService.js';
-import JoinTournamentModal from '../components/JoinTournamentModal.jsx'; // Import the new modal
+import JoinTournamentModal from '../components/JoinTournamentModal.jsx';
 import '../styles/GameDetailPage.css'; 
+
+// --- 1. THIS IS THE FIX ---
+// The filenames are now simple and match what you just did in Step 1.
+const bannerImages = [
+  '/banners/banner1.jpg',
+  '/banners/banner2.jpg',
+  '/banners/banner3.jpg',
+];
 
 const GameDetailPage = () => {
   const { slug } = useParams(); 
@@ -13,11 +21,21 @@ const GameDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // --- NEW STATES FOR MODAL ---
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTournament, setSelectedTournament] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState(null);
+
+  // Logic for the slider
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    const sliderInterval = setInterval(() => {
+      setCurrentSlide((prevSlide) => (prevSlide + 1) % bannerImages.length);
+    }, 5000); 
+
+    return () => clearInterval(sliderInterval);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -44,44 +62,32 @@ const GameDetailPage = () => {
     };
 
     fetchData();
-  }, [slug, navigate]); // Added navigate to dependency array
+  }, [slug, navigate]);
 
-  // --- NEW FUNCTION TO HANDLE CLICKING JOIN ---
   const handleJoinClick = (tournament) => {
-    setSelectedTournament(tournament); // Store which tournament was clicked
+    setSelectedTournament(tournament); 
     
     if (tournament.entryFee > 0) {
-      // Paid tournament: Redirect to wallet (as you requested)
-      navigate('/wallet'); // You can change this to /payment later
+      navigate('/wallet'); 
     } else {
-      // Free tournament: Open the modal
       setModalError(null);
       setIsModalOpen(true);
     }
   };
 
-  // --- NEW FUNCTION TO SUBMIT MODAL ---
   const handleModalSubmit = async (formData) => {
     setModalLoading(true);
     setModalError(null);
     try {
-      // Call the new service function
       const data = await gameService.joinTournament(formData);
-      
-      // Success!
-      alert(data.message); // Simple success message
+      alert(data.message); 
       setIsModalOpen(false);
-      
-      // We should refresh the tournament list to show the new player count
-      // For now, we'll just close the modal
-      
     } catch (err) {
       setModalError(err.response?.data?.message || 'Failed to join. Please try again.');
     } finally {
       setModalLoading(false);
     }
   };
-
 
   if (loading) {
     return (
@@ -114,13 +120,37 @@ const GameDetailPage = () => {
           <button onClick={() => navigate(-1)} className="back-button">←</button>
           <h1 className="game-title">{game ? game.name : 'Tournaments'}</h1>
         </div>
+        
+        {/* The Slider */}
+        <div className="slider-container">
+          <div 
+            className="slider-wrapper"
+            style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+          >
+            {bannerImages.map((imgUrl, index) => (
+              <div className="slider-slide" key={index}>
+                {/* --- 2. THIS IS THE ALT TEXT YOU ARE SEEING --- */}
+                <img src={imgUrl} alt={`Banner ${index + 1}`} className="slider-image" />
+              </div>
+            ))}
+          </div>
+          <div className="slider-dots">
+            {bannerImages.map((_, index) => (
+              <span 
+                key={index} 
+                className={`slider-dot ${index === currentSlide ? 'active' : ''}`}
+                onClick={() => setCurrentSlide(index)}
+              ></span>
+            ))}
+          </div>
+        </div>
+        {/* End of Slider */}
 
         <div className="tournament-list">
           {tournaments.length === 0 ? (
             <div className="no-tournaments">No tournaments found for this game.</div>
           ) : (
             tournaments.map(tournament => (
-              // --- UPDATED CARD: No longer a Link, it's a div ---
               <div key={tournament._id} className="tournament-card">
                 <div className="card-header">
                   <span className="tournament-name">{tournament.name}</span>
@@ -131,7 +161,6 @@ const GameDetailPage = () => {
                     <span className="label">Prize Pool</span>
                     <span className="value">₹{tournament.prizePool}</span>
                   </div>
-                  {/* --- UPDATED BUTTON --- */}
                   <button 
                     className="btn-join" 
                     onClick={() => handleJoinClick(tournament)}
@@ -157,7 +186,6 @@ const GameDetailPage = () => {
         </div>
       </div>
 
-      {/* --- NEW MODAL RENDER --- */}
       {isModalOpen && selectedTournament && (
         <JoinTournamentModal
           tournament={selectedTournament}

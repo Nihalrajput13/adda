@@ -1,28 +1,26 @@
 import mongoose from 'mongoose';
 
-const otpSchema = new mongoose.Schema({
+const OTPSchema = new mongoose.Schema({
   phone: {
     type: String,
-    required: true
+    required: true,
   },
+  // --- THIS IS THE CHANGE ---
+  // The 'otp' field now stores the 'verificationId' string from the API
   otp: {
     type: String,
-    required: true
+    required: true,
   },
   expiresAt: {
     type: Date,
     required: true,
-    default: () => new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
   },
   verified: {
     type: Boolean,
-    default: false
-  }
-}, {
-  timestamps: true
-});
+    default: false,
+  },
+}, { timestamps: true });
 
-// Auto-delete expired OTPs
-otpSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+const OTP = mongoose.model('OTP', OTPSchema);
 
-export default mongoose.model('OTP', otpSchema);
+export default OTP;

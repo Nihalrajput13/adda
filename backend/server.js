@@ -2,11 +2,14 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
+
+// Import all routes
 import authRoutes from './src/routes/authRoutes.js';
 import userRoutes from './src/routes/userRoutes.js';
 import gameRoutes from './src/routes/gameRoutes.js';
 import walletRoutes from './src/routes/walletRoutes.js';
-import tournamentRoutes from './src/routes/tournamentRoutes.js'; // <-- ADDED THIS
+import tournamentRoutes from './src/routes/tournamentRoutes.js';
+import paymentRoutes from './src/routes/paymentRoutes.js'; // <-- ADD THIS
 import errorHandler from './src/middleware/errorHandler.js';
 
 dotenv.config();
@@ -24,7 +27,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/games', gameRoutes);
 app.use('/api/wallet', walletRoutes);
-app.use('/api/tournaments', tournamentRoutes); // <-- ADDED THIS
+app.use('/api/tournaments', tournamentRoutes);
+app.use('/api/payment', paymentRoutes); // <-- ADD THIS
 
 // Error handler
 app.use(errorHandler);

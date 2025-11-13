@@ -1,142 +1,93 @@
-import React, { useContext, useState } from 'react';
-import { WalletContext } from '../context/WalletContext';
-import { AuthContext } from '../context/AuthContext';
-import Sidebar from '../components/Sidebar';
-import BottomNav from '../components/BottomNav';
-import Header from '../components/Header';
+import React, { useState, useContext } from 'react';
+import { WalletContext } from '../context/WalletContext.jsx';
+import { paymentService } from '../services/paymentService.js';
+// We should create a simple CSS file for this
+// import '../styles/Wallet.css'; 
 
 const Wallet = () => {
-  const { balance, transactions, addMoney, withdraw } = useContext(WalletContext);
-  const { user } = useContext(AuthContext);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { balance, fetchBalance } = useContext(WalletContext);
   const [amount, setAmount] = useState('');
-  const [activeTab, setActiveTab] = useState('deposit');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleDeposit = async (e) => {
+  const handleAddMoney = async (e) => {
     e.preventDefault();
-    if (!amount || amount < 10) {
-      alert('Minimum deposit is ₹10');
+    if (!amount || Number(amount) <= 0) {
+      setError('Please enter a valid amount');
       return;
     }
-    try {
-      await addMoney(parseFloat(amount));
-      alert('Money added successfully!');
-      setAmount('');
-    } catch (error) {
-      alert('Failed to add money');
-    }
-  };
 
-  const handleWithdraw = async (e) => {
-    e.preventDefault();
-    if (!amount || amount < 100) {
-      alert('Minimum withdrawal is ₹100');
-      return;
-    }
+    setLoading(true);
+    setError('');
+
     try {
-      await withdraw(parseFloat(amount));
-      alert('Withdrawal request submitted!');
-      setAmount('');
-    } catch (error) {
-      alert(error.response?.data?.message || 'Withdrawal failed');
+      // 1. Call our backend to create the order
+      const data = await paymentService.createOrder(Number(amount));
+
+      // 2. If successful, redirect to the payment URL
+      if (data && data.payment_url) {
+        window.location.href = data.payment_url;
+      } else {
+        setError('Could not initiate payment.');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to start payment');
+      setLoading(false);
     }
+    // No need for setLoading(false) on success, as we are redirecting
   };
 
   return (
-    <div className="page-container">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <Header balance={balance} onMenuClick={() => setSidebarOpen(true)} />
+    <div className="wallet-container" style={styles.container}>
+      <h1 style={styles.header}>My Wallet</h1>
       
-      <div className="page-content">
-        <div className="wallet-balance">
-          <h2>Wallet Balance</h2>
-          <h1 className="balance-amount">₹{balance || 0}</h1>
-        </div>
-
-        <div className="wallet-tabs">
-          <button 
-            className={activeTab === 'deposit' ? 'active' : ''}
-            onClick={() => setActiveTab('deposit')}
-          >
-            Add Money
-          </button>
-          <button 
-            className={activeTab === 'withdraw' ? 'active' : ''}
-            onClick={() => setActiveTab('withdraw')}
-          >
-            Withdraw
-          </button>
-          <button 
-            className={activeTab === 'history' ? 'active' : ''}
-            onClick={() => setActiveTab('history')}
-          >
-            History
-          </button>
-        </div>
-
-        {activeTab === 'deposit' && (
-          <form className="wallet-form" onSubmit={handleDeposit}>
-            <div className="form-group">
-              <label>Enter Amount (Min ₹10)</label>
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="Enter amount"
-                min="10"
-              />
-            </div>
-            <button type="submit" className="btn-primary">
-              Add Money
-            </button>
-          </form>
-        )}
-
-        {activeTab === 'withdraw' && (
-          <form className="wallet-form" onSubmit={handleWithdraw}>
-            <div className="form-group">
-              <label>Enter Amount (Min ₹100)</label>
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="Enter amount"
-                min="100"
-              />
-            </div>
-            <button type="submit" className="btn-primary">
-              Withdraw
-            </button>
-          </form>
-        )}
-
-        {activeTab === 'history' && (
-          <div className="transaction-history">
-            <h3>Recent Transactions</h3>
-            {transactions.length === 0 ? (
-              <p className="no-transactions">No transactions yet</p>
-            ) : (
-              <div className="transactions-list">
-                {transactions.map((transaction, index) => (
-                  <div key={index} className="transaction-item">
-                    <div className="transaction-info">
-                      <p className="transaction-type">{transaction.type}</p>
-                      <p className="transaction-date">{new Date(transaction.createdAt).toLocaleDateString()}</p>
-                    </div>
-                    <p className={`transaction-amount ${transaction.type === 'deposit' ? 'credit' : 'debit'}`}>
-                      {transaction.type === 'deposit' ? '+' : '-'}₹{transaction.amount}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+      <div style={styles.balanceCard}>
+        <span style={styles.balanceLabel}>Current Balance</span>
+        <span style={styles.balanceAmount}>₹{balance.toFixed(2)}</span>
+        <button onClick={fetchBalance} style={styles.refreshButton}>Refresh</button>
       </div>
 
-      <BottomNav />
+      <div style={styles.formCard}>
+        <form onSubmit={handleAddMoney}>
+          <h2 style={styles.formHeader}>Add Money to Wallet</h2>
+          {error && <div style={styles.error}>{error}</div>}
+          
+          <div style={styles.formGroup}>
+            <label htmlFor="amount" style={styles.label}>Amount (₹)</label>
+            <input
+              type="number"
+              id="amount"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="Enter amount"
+              style={styles.input}
+            />
+          </div>
+          
+          <button type="submit" style={styles.submitButton} disabled={loading}>
+            {loading ? 'Processing...' : 'Add Money'}
+          </button>
+        </form>
+      </div>
     </div>
   );
+};
+
+// Simple inline styles to make it look good
+const styles = {
+  container: { padding: '20px', maxWidth: '600px', margin: '0 auto', color: '#fff' },
+  header: { textAlign: 'center', color: '#fff', marginBottom: '20px' },
+  balanceCard: { background: '#2c2c2e', padding: '20px', borderRadius: '12px', textAlign: 'center', marginBottom: '30px' },
+  balanceLabel: { display: 'block', fontSize: '1rem', color: '#aaa', marginBottom: '10px' },
+  balanceAmount: { display: 'block', fontSize: '2.5rem', fontWeight: 'bold', color: '#4CAF50', marginBottom: '20px' },
+  refreshButton: { background: '#444', color: '#fff', border: 'none', padding: '10px 15px', borderRadius: '8px', cursor: 'pointer' },
+  formCard: { background: '#2c2c2e', padding: '24px', borderRadius: '12px' },
+  formHeader: { marginTop: 0, textAlign: 'center', color: '#eee' },
+  error: { color: '#e53935', background: '#ffebee', padding: '10px', borderRadius: '8px', marginBottom: '15px', textAlign: 'center' },
+  formGroup: { marginBottom: '20px' },
+  label: { display: 'block', marginBottom: '8px', color: '#ccc' },
+  input: { width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #555', background: '#333', color: '#fff', fontSize: '1rem', boxSizing: 'border-box' },
+  submitButton: { width: '100%', padding: '14px', borderRadius: '8px', border: 'none', background: '#e53935', color: 'white', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer' }
 };
 
 export default Wallet;

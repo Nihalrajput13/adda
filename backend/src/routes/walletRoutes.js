@@ -1,14 +1,16 @@
 import express from 'express';
-import { getBalance, getTransactions, addMoney, withdrawMoney } from '../controllers/walletController.js';
+// --- Import both controller functions ---
+import { getBalance, getTransactions } from '../controllers/walletController.js';
 import { authMiddleware } from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.use(authMiddleware);
+// GET /api/wallet/balance
+router.get('/balance', authMiddleware, getBalance);
 
-router.get('/balance', getBalance);
-router.get('/transactions', getTransactions);
-router.post('/add', addMoney);
-router.post('/withdraw', withdrawMoney);
+// --- THIS IS THE NEW ROUTE THAT FIXES THE 404 ERROR ---
+// GET /api/wallet/transactions
+router.get('/transactions', authMiddleware, getTransactions);
+
 
 export default router;
