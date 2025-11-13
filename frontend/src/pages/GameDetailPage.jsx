@@ -10,6 +10,38 @@ const bannerImages = [
   '/banners/banner3.jpg',
 ];
 
+// --- NEW HELPER FUNCTION ---
+// This function parses your string: "1=1=100,2=2=60,3=3=40"
+// And turns it into: "Rank 1: ₹100, Rank 2: ₹60, Rank 3: ₹40"
+const parsePrizeBreakup = (breakupString) => {
+  if (!breakupString || typeof breakupString !== 'string') {
+    return null;
+  }
+  
+  try {
+    return breakupString.split(',') // -> ["1=1=100", "2=2=60", "3=3=40"]
+      .map(item => {
+        const parts = item.split('='); // -> ["1", "1", "100"]
+        
+        let rank = parts[0];
+        // Check for a rank range (e.g., 2=5=50)
+        if (parts.length === 3 && parts[0] !== parts[1]) {
+          rank = `${parts[0]}-${parts[1]}`;
+        }
+        
+        const prize = parts[parts.length - 1];
+        return `Rank ${rank}: ₹${prize}`; // -> "Rank 1: ₹100"
+      })
+      .join(', '); // -> "Rank 1: ₹100, Rank 2: ₹60, Rank 3: ₹40"
+  
+  } catch (error) {
+    console.error('Error parsing prize breakup:', error);
+    return "Prize breakup format error.";
+  }
+};
+// --- END OF HELPER FUNCTION ---
+
+
 const GameDetailPage = () => {
   const { slug } = useParams(); 
   const navigate = useNavigate();
@@ -19,7 +51,7 @@ const GameDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [selectedTournament, setSelectedTournament] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState(null);
@@ -33,7 +65,7 @@ const GameDetailPage = () => {
     return () => clearInterval(sliderInterval);
   }, []);
 
-  // Effect to get Game Details AND all "Live" tournaments
+  // Effect to fetch data
   useEffect(() => {
     const fetchData = async () => {
       if (!slug) return; 
@@ -44,7 +76,7 @@ const GameDetailPage = () => {
         
         const [gameData, tournamentsData] = await Promise.all([
           gameService.getGameBySlug(slug),
-          gameService.getAllPublicTournaments(slug) // Use the new public function
+          gameService.getAllPublicTournaments(slug) 
         ]);
 
         setGame(gameData.game);
@@ -67,7 +99,7 @@ const GameDetailPage = () => {
       navigate('/wallet'); 
     } else {
       setModalError(null);
-      setIsModalOpen(true);
+      setIsJoinModalOpen(true);
     }
   };
 
@@ -77,7 +109,7 @@ const GameDetailPage = () => {
     try {
       const data = await gameService.joinTournament(formData);
       alert(data.message); 
-      setIsModalOpen(false);
+      setIsJoinModalOpen(false);
     } catch (err) {
       setModalError(err.response?.data?.message || 'Failed to join. Please try again.');
     } finally {
@@ -91,8 +123,6 @@ const GameDetailPage = () => {
         <div className="detail-header">
           <button onClick={() => navigate(-1)} className="back-button">←</button>
           <h1 className="game-title">{game ? game.name : 'Tournaments'}</h1>
-          
-          {/* --- "MY LEAGUES" BUTTON --- */}
           <button 
             className="my-leagues-button" 
             onClick={() => navigate(`/my-leagues/${slug}`)}
@@ -132,54 +162,71 @@ const GameDetailPage = () => {
           {!loading && !error && (
             <>
               {tournaments.length === 0 ? (
-                // --- THIS IS THE FIX ---
-                // This message is now accurate
                 <div className="no-tournaments">No available tournaments found.</div>
               ) : (
-                tournaments.map(tournament => (
-                  <div key={tournament._id} className="tournament-card">
-                    <div className="card-header">
-                      <span className="tournament-name">{tournament.name}</span>
-                      <span className="tournament-map">{tournament.map}</span>
-                    </div>
-                    <div className="card-body">
-                      <div className="prize-pool">
-                        <span className="label">Prize Pool</span>
-                        <span className="value">₹{tournament.prizePool}</span>
+                tournaments.map(tournament => {
+                  
+                  // --- THIS IS THE FIX ---
+                  // We parse the string *before* rendering
+                  const prizeString = parsePrizeBreakup(tournament.prizeBreakup);
+                  // --- END OF FIX ---
+
+                  return (
+                    <div key={tournament._id} className="tournament-card">
+                      <div className="card-header">
+                        <span className="tournament-name">{tournament.name}</span>
+                        <span className="tournament-map">{tournament.map}</span>
                       </div>
-                      <button 
-                        className="btn-join" 
-                        onClick={() => handleJoinClick(tournament)}
-                      >
-                        {tournament.entryFee === 0 ? 'Join FREE' : `Join ₹${tournament.entryFee}`}
-                      </button>
-                    </div>
-                    <div className="card-footer">
-                      <div className="player-count">
-                        <div className="player-bar">
-                          <span 
-                            className="player-fill" 
-                            style={{ width: `${(tournament.playersJoined / tournament.maxPlayers) * 100}%` }}
-                          ></span>
+                      <div className="card-body">
+                        <div className="prize-pool">
+                          <span className="label">Prize Pool</span>
+                          <span className="value">₹{tournament.prizePool}</span>
                         </div>
-                        <span className="count-text">{tournament.playersJoined} / {tournament.maxPlayers}</span>
+                        <button 
+                          className="btn-join" 
+                          onClick={() => handleJoinClick(tournament)}
+                        >
+                          {tournament.entryFee === 0 ? 'Join FREE' : `Join ₹${tournament.entryFee}`}
+                        </button>
                       </div>
-                      <span className="tournament-type">{tournament.type}</span>
+
+                      {/* --- THIS IS THE NEW PRIZE BREAKUP SECTION --- */}
+                      {/* It shows the parsed string in one line */}
+                      {prizeString && (
+                        <div className="prize-breakup-text">
+                          <span className="prize-label">🏆 Prizes:</span> {prizeString}
+                        </div>
+                      )}
+                      {/* --- END OF NEW SECTION --- */}
+
+                      <div className="card-footer">
+                        <div className="player-count">
+                          <div className="player-bar">
+                            <span 
+                              className="player-fill" 
+                              style={{ width: `${(tournament.playersJoined / tournament.maxPlayers) * 100}%` }}
+                            ></span>
+                          </div>
+                          <span className="count-text">{tournament.playersJoined} / {tournament.maxPlayers}</span>
+                        </div>
+                        <span className="tournament-type">{tournament.type}</span>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  )
+                })
               )}
             </>
           )}
         </div>
       </div>
 
-      {isModalOpen && selectedTournament && (
+      {/* Join Tournament Modal */}
+      {isJoinModalOpen && selectedTournament && (
         <JoinTournamentModal
           tournament={selectedTournament}
           loading={modalLoading}
           error={modalError}
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => setIsJoinModalOpen(false)}
           onSubmit={handleModalSubmit}
         />
       )}
