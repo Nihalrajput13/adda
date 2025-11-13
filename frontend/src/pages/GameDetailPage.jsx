@@ -4,8 +4,6 @@ import { gameService } from '../services/gameService.js';
 import JoinTournamentModal from '../components/JoinTournamentModal.jsx';
 import '../styles/GameDetailPage.css'; 
 
-// --- 1. THIS IS THE FIX ---
-// The filenames are now simple and match what you just did in Step 1.
 const bannerImages = [
   '/banners/banner1.jpg',
   '/banners/banner2.jpg',
@@ -25,18 +23,17 @@ const GameDetailPage = () => {
   const [selectedTournament, setSelectedTournament] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState(null);
-
-  // Logic for the slider
   const [currentSlide, setCurrentSlide] = useState(0);
 
+  // Effect for the slider
   useEffect(() => {
     const sliderInterval = setInterval(() => {
       setCurrentSlide((prevSlide) => (prevSlide + 1) % bannerImages.length);
     }, 5000); 
-
     return () => clearInterval(sliderInterval);
   }, []);
 
+  // Effect to get Game Details AND all "Live" tournaments
   useEffect(() => {
     const fetchData = async () => {
       if (!slug) return; 
@@ -47,7 +44,7 @@ const GameDetailPage = () => {
         
         const [gameData, tournamentsData] = await Promise.all([
           gameService.getGameBySlug(slug),
-          gameService.getTournamentsByGame(slug)
+          gameService.getAllPublicTournaments(slug) // Use the new public function
         ]);
 
         setGame(gameData.game);
@@ -62,11 +59,10 @@ const GameDetailPage = () => {
     };
 
     fetchData();
-  }, [slug, navigate]);
+  }, [slug, navigate]); 
 
   const handleJoinClick = (tournament) => {
     setSelectedTournament(tournament); 
-    
     if (tournament.entryFee > 0) {
       navigate('/wallet'); 
     } else {
@@ -88,40 +84,24 @@ const GameDetailPage = () => {
       setModalLoading(false);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="game-detail-page">
-        <div className="detail-header">
-          <button onClick={() => navigate(-1)} className="back-button">←</button>
-          <h1 className="game-title">Loading...</h1>
-        </div>
-        <div className="loading-screen">Loading Tournaments...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="game-detail-page">
-        <div className="detail-header">
-          <button onClick={() => navigate(-1)} className="back-button">←</button>
-          <h1 className="game-title">Error</h1>
-        </div>
-        <div className="error-screen">Error: {error}</div>
-      </div>
-    );
-  }
-
+  
   return (
     <>
       <div className="game-detail-page">
         <div className="detail-header">
           <button onClick={() => navigate(-1)} className="back-button">←</button>
           <h1 className="game-title">{game ? game.name : 'Tournaments'}</h1>
+          
+          {/* --- "MY LEAGUES" BUTTON --- */}
+          <button 
+            className="my-leagues-button" 
+            onClick={() => navigate(`/my-leagues/${slug}`)}
+          >
+            My Leagues
+          </button>
         </div>
         
-        {/* The Slider */}
+        {/* Slider */}
         <div className="slider-container">
           <div 
             className="slider-wrapper"
@@ -129,7 +109,6 @@ const GameDetailPage = () => {
           >
             {bannerImages.map((imgUrl, index) => (
               <div className="slider-slide" key={index}>
-                {/* --- 2. THIS IS THE ALT TEXT YOU ARE SEEING --- */}
                 <img src={imgUrl} alt={`Banner ${index + 1}`} className="slider-image" />
               </div>
             ))}
@@ -144,44 +123,53 @@ const GameDetailPage = () => {
             ))}
           </div>
         </div>
-        {/* End of Slider */}
-
+        
         <div className="tournament-list">
-          {tournaments.length === 0 ? (
-            <div className="no-tournaments">No tournaments found for this game.</div>
-          ) : (
-            tournaments.map(tournament => (
-              <div key={tournament._id} className="tournament-card">
-                <div className="card-header">
-                  <span className="tournament-name">{tournament.name}</span>
-                  <span className="tournament-map">{tournament.map}</span>
-                </div>
-                <div className="card-body">
-                  <div className="prize-pool">
-                    <span className="label">Prize Pool</span>
-                    <span className="value">₹{tournament.prizePool}</span>
-                  </div>
-                  <button 
-                    className="btn-join" 
-                    onClick={() => handleJoinClick(tournament)}
-                  >
-                    {tournament.entryFee === 0 ? 'Join FREE' : `Join ₹${tournament.entryFee}`}
-                  </button>
-                </div>
-                <div className="card-footer">
-                  <div className="player-count">
-                    <div className="player-bar">
-                      <span 
-                        className="player-fill" 
-                        style={{ width: `${(tournament.playersJoined / tournament.maxPlayers) * 100}%` }}
-                      ></span>
+          {loading && <div className="loading-screen">Loading Tournaments...</div>}
+          
+          {error && <div className="error-screen">Error: {error}</div>}
+
+          {!loading && !error && (
+            <>
+              {tournaments.length === 0 ? (
+                // --- THIS IS THE FIX ---
+                // This message is now accurate
+                <div className="no-tournaments">No available tournaments found.</div>
+              ) : (
+                tournaments.map(tournament => (
+                  <div key={tournament._id} className="tournament-card">
+                    <div className="card-header">
+                      <span className="tournament-name">{tournament.name}</span>
+                      <span className="tournament-map">{tournament.map}</span>
                     </div>
-                    <span className="count-text">{tournament.playersJoined} / {tournament.maxPlayers}</span>
+                    <div className="card-body">
+                      <div className="prize-pool">
+                        <span className="label">Prize Pool</span>
+                        <span className="value">₹{tournament.prizePool}</span>
+                      </div>
+                      <button 
+                        className="btn-join" 
+                        onClick={() => handleJoinClick(tournament)}
+                      >
+                        {tournament.entryFee === 0 ? 'Join FREE' : `Join ₹${tournament.entryFee}`}
+                      </button>
+                    </div>
+                    <div className="card-footer">
+                      <div className="player-count">
+                        <div className="player-bar">
+                          <span 
+                            className="player-fill" 
+                            style={{ width: `${(tournament.playersJoined / tournament.maxPlayers) * 100}%` }}
+                          ></span>
+                        </div>
+                        <span className="count-text">{tournament.playersJoined} / {tournament.maxPlayers}</span>
+                      </div>
+                      <span className="tournament-type">{tournament.type}</span>
+                    </div>
                   </div>
-                  <span className="tournament-type">{tournament.type}</span>
-                </div>
-              </div>
-            ))
+                ))
+              )}
+            </>
           )}
         </div>
       </div>

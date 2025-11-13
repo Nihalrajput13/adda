@@ -10,12 +10,10 @@ import Register from './pages/Register.jsx';
 import VerifyOTP from './pages/VerifyOTP.jsx';
 import Home from './pages/Home.jsx';
 import GameDetailPage from './pages/GameDetailPage.jsx';
+import MyLeaguesPage from './pages/MyLeaguesPage.jsx'; // <-- ADD THIS
 import Profile from './pages/Profile.jsx';
 import Wallet from './pages/Wallet.jsx';
-
-// --- THIS IS THE CORRECTED LINE ---
 import PaymentStatusPage from './pages/PaymentStatusPage.jsx'; 
-
 import Stats from './pages/Stats.jsx';
 import Quizzes from './pages/Quizzes.jsx';
 import Rewards from './pages/Rewards.jsx';
@@ -38,12 +36,15 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/verify-otp" element={<VerifyOTP />} />
 
-            {/* --- ADD THIS NEW ROUTE --- */}
             <Route path="/payment-status" element={<PrivateRoute><PaymentStatusPage /></PrivateRoute>} />
             
             {/* Private Routes (Wrapped) */}
             <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
             <Route path="/games/:slug" element={<PrivateRoute><GameDetailPage /></PrivateRoute>} />
+            
+            {/* --- ADD THIS NEW ROUTE --- */}
+            <Route path="/my-leagues/:slug" element={<PrivateRoute><MyLeaguesPage /></PrivateRoute>} />
+            
             <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
             <Route path="/wallet" element={<PrivateRoute><Wallet /></PrivateRoute>} />
             <Route path="/stats" element={<PrivateRoute><Stats /></PrivateRoute>} />

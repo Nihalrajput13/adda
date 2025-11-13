@@ -38,10 +38,15 @@ const tournamentSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  // --- THIS IS THE NEW FIELD ---
+  status: {
+    type: String,
+    enum: ['Upcoming', 'Live', 'Completed'],
+    default: 'Upcoming',
+  },
+  // ---
 }, { timestamps: true });
 
 const Tournament = mongoose.model('Tournament', tournamentSchema);
 
-// --- THIS IS THE FIX ---
-// This line makes it a default export.
 export default Tournament;

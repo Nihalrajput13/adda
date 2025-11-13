@@ -1,0 +1,123 @@
+/* Styles for the new My Leagues page */
+.my-leagues-page {
+  background-color: #f0f2f5; /* Light grey background */
+  min-height: 100vh;
+  color: #333;
+}
+
+/* We can reuse the header style from GameDetailPage.css */
+/* If it doesn't work, add these lines: */
+.detail-header {
+  background-color: #ffffff;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.back-button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  margin-right: 12px;
+  cursor: pointer;
+}
+.game-title {
+  font-size: 20px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+/* List styles */
+.my-leagues-list-content {
+  padding: 0;
+}
+.my-leagues-list {
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Card styles based on your image */
+.league-card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid #eee;
+  overflow: hidden;
+}
+
+.league-card-header {
+  background-color: #4A4A4A; /* Dark header from image */
+  color: white;
+  padding: 10px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.league-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.league-fill-status {
+  font-size: 0.75rem;
+  color: #ddd;
+}
+
+.league-card-body {
+  padding: 15px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.league-info-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.league-info-item .label {
+  font-size: 0.7rem;
+  color: #888;
+  margin-bottom: 2px;
+}
+
+.league-info-item .value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #333;
+}
+.league-info-item .value.entry {
+  color: #4CAF50; /* Green */
+}
+.league-info-item .value.prize {
+  color: #E53935; /* Red */
+}
+.league-info-item .value.kill {
+  color: #333;
+}
+
+.league-card-footer {
+  padding: 10px 15px;
+  background-color: #fafafa;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.league-card-footer .league-info-item .label {
+  font-size: 0.7rem;
+}
+.league-card-footer .league-info-item .value {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
