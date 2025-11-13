@@ -38,13 +38,21 @@ const tournamentSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  // --- THIS IS THE NEW FIELD ---
   status: {
     type: String,
     enum: ['Upcoming', 'Live', 'Completed'],
     default: 'Upcoming',
   },
-  // ---
+
+  // --- THIS IS THE FIX ---
+  // Change this field to be a simple String
+  // This now matches your database screenshot perfectly
+  prizeBreakup: {
+    type: String,
+    default: ''
+  }
+  // --- END OF FIX ---
+
 }, { timestamps: true });
 
 const Tournament = mongoose.model('Tournament', tournamentSchema);
